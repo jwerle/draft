@@ -6,9 +6,9 @@ describe("draft", function () {
 	  , Model  = draft.Model
 
 	describe("Schema", function () {
-		describe("Should only accept a plain object as an argument", function () {
-			it("Should not accept a 'undefined'", function () {
-				assert.throws(function () { new Schema(undefined); }, TypeError);	
+		describe("Should only accept a plain object or undefined as an argument", function () {
+			it("Should accept a 'undefined'", function () {
+				assert.doesNotThrow(function () { new Schema(undefined); }, TypeError);	
 			});
 
 			it("Should not accept a 'null'", function () {
@@ -80,9 +80,35 @@ describe("draft", function () {
 				assert.ok(schema.tree.profile.parents.father.name.Constructor === String, "Failed to create .profile.parents.father.name type");
 			});
 		});
+
+		describe('#add', function () {
+			it("Should accept a key and Type instantiation or descriptor object", function () {
+				schema = new Schema();
+				schema.add('name', String);
+				schema.add('age', { type: Number });
+				assert.ok(schema.tree.name.Constructor === String);
+				assert.ok(schema.tree.age.Constructor === Number);
+			});
+		});
+
+		describe('#createModel', function () {
+			it("Should create a Model constructor from the defined schema", function () {
+				var userSchema, User
+				userSchema = new Schema();
+				userSchema.add('name', String);
+				userSchema.add('profile', { age: Number, gender: { type: String, enum: ['male', 'female', 'other'] }});
+				User = userSchema.createModel();
+				assert.ok(Model.prototype.isPrototypeOf(User.prototype));
+
+				var user = new User( {name : 'Joe', profile: { age: 22, gender: 'male' }} );
+				
+				console.log(user.profile)
+
+			});
+		});
 	});
 
 	describe("Model", function () {
-		
+
 	});
 });
