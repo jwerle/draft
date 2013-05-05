@@ -101,8 +101,8 @@ describe("draft", function () {
 				assert.ok(Model.prototype.isPrototypeOf(User.prototype));
 
 				var user = new User( {name : 'Joe', profile: { age: 22, gender: 'male' }} );
-				
-				console.log(user.profile)
+				user.profile.age = 25
+				console.log(user.profile.age)
 
 			});
 		});

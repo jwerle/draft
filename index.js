@@ -1,8 +1,10 @@
 /**
  * Module dependencies
  */
-var define  = Object.defineProperty
-	,	isArray = Array.isArray
+var define   = Object.defineProperty
+	,	freeze   = Object.freeze
+	,	isFrozen = Object.isFrozen
+	,	isArray  = Array.isArray
 
 /**
  * Merges two or more objects together. Also performs deep merging
@@ -18,7 +20,7 @@ function merge(obj1, obj2) {
     try {
       // Property in destination object set; update its value.
       if ( obj2[p].constructor==Object ) {
-        obj1[p] = MergeRecursive(obj1[p], obj2[p]);
+        obj1[p] = merge(obj1[p], obj2[p]);
 
       } else {
         obj1[p] = obj2[p];
@@ -91,14 +93,19 @@ module.exports.Model  = Model;
  * @constructor Schema
  * @api public
  * @param {Object} definiton
+ * @param {Object} options
  */
-function Schema (definiton) {
+function Schema (definiton, options) {
 	// we must use plain objects
 	if (definiton !== undefined && !isPlainObject(definiton)) throw new TypeError("Schema only expects an object as a definiton");
 	// create tree instance with an empty object
 	this.tree = new Tree({});
 	// add definiton to tree
 	this.add(definiton);
+	// attach options
+	this.options = merge({
+		strict : true
+	} , isPlainObject(options)? options : {});
 }
 
 /**
@@ -285,8 +292,11 @@ function Model (data) {
 	if (data !== undefined && typeof data !== 'object') throw new TypeError("Modele expects an object");
 	// ensure the schema set
 	if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
+
+	var set = function (data) { merge(this, data); }
 	// overload refresh method on prototype
-	this.refresh = function () {
+	var refresh = function () {
+		if (isFrozen(this)) return false;
 		// IIFE for recursive definiton
 		!function defineFromTree (tree, scope, table) {
 			var item
@@ -296,35 +306,36 @@ function Model (data) {
 						table[item] = table[item] || undefined;
 						define(scope, item, {
 							configurable : false,
-							get : function () { return tree[item].get(table[item]); },
-							set : function (value) { console.log(value); table[item] = tree[item].set(value) }
+							enumerable : true,
+							get : function () { return table[item]? tree[item].get(table[item]) : undefined; },
+							set : function (value) { table[item] = tree[item].set(value) }
 						});
-						console.log('scope',scope[item])
-						// console.log('tree',tree)
-						// 
-						// console.log('table',table)
 					}
 					else if (tree[item] instanceof Tree) {
 						table[item] = table[item] || {};						
-						scope[item] = {foo:'bar'};
+						scope[item] = {};
 						defineFromTree.call(self, tree[item], scope[item], table[item]);
 					}
 				}.call(self, item);
 			}
-		}.call(self, self.schema.tree, self, table);
+		}.call(this, self.schema.tree, this, table);
+
+		if (this.schema.options.strict) freeze(this);
 	};
 	// overload set method on prototype
-	this.set = function (data, tree) {
-		tree = tree || this.schema.tree
-		for (var prop in data) {
-			if (!tree[prop]) continue;
-			if (typeof data[prop] === 'object') this.set(data[prop], tree[prop]);
-			else {
-				console.log(prop)
-				this[prop] = data[prop];
-			}
-		}
-	};
+	define(this, 'set', {
+		configurable : false,
+		enumerable : false,
+		writeable : false,
+		value : set
+	 });
+
+	define(this, 'refresh', {
+		configurable : false,
+		enumerable : false,
+		writeable : false,
+		value : refresh
+	 });
 	// call a refresh to init schema
 	this.refresh();
 	// set  data
