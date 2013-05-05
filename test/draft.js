@@ -93,17 +93,14 @@ describe("draft", function () {
 
 		describe('#createModel', function () {
 			it("Should create a Model constructor from the defined schema", function () {
-				var userSchema, User
-				userSchema = new Schema();
-				userSchema.add('name', String);
-				userSchema.add('profile', { age: Number, gender: { type: String, enum: ['male', 'female', 'other'] }});
-				User = userSchema.createModel();
+				var schema, User, user
+				schema = new Schema();
+				schema.add('name', String);
+				schema.add('profile', { age: Number, gender: { type: String, enum: ['male', 'female', 'other'] }});
+				User = schema.createModel();
+				user = new User( {name : 'Joe', profile: { age: 22, gender: 'male' }} );
+
 				assert.ok(Model.prototype.isPrototypeOf(User.prototype));
-
-				var user = new User( {name : 'Joe', profile: { age: 22, gender: 'male' }} );
-				user.profile.age = 25
-				console.log(user.profile.age)
-
 			});
 		});
 	});

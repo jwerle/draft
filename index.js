@@ -103,9 +103,7 @@ function Schema (definiton, options) {
 	// add definiton to tree
 	this.add(definiton);
 	// attach options
-	this.options = merge({
-		strict : true
-	} , isPlainObject(options)? options : {});
+	this.options = merge({ strict : true}, isPlainObject(options)? options : {});
 }
 
 /**
@@ -248,22 +246,18 @@ Type.prototype.set = function (value) {
  */
 Type.prototype.validate = function (input) {
 	var Constructor
-	if (typeof input === 'object' && this.Constructor !== Object) {
+	if (typeof input === 'object' && this.Constructor !== Object)
 		return (input instanceof this.Constructor);
+	// check input for primitive types
+	switch (typeof input) {
+		case 'string':   Constructor = String;   break;
+		case 'function': Constructor = Function; break;
+		case 'boolean':  Constructor = Boolean;  break;
+		case 'object':   Constructor = Object;   break;
+		case 'number':   Constructor = Number;   break;
 	}
-	else {
-		switch (typeof input) {
-			case 'string':   Constructor = String;   break;
-			case 'function': Constructor = Function; break;
-			case 'boolean':  Constructor = Boolean;  break;
-			case 'object':   Constructor = Object;   break;
-		}
-
-		// compare Type Constructor with input Constructor
-		return this.Constructor === Constructor;
-	}
-
-	return false;
+	// compare Type Constructor with input Constructor
+	return this.Constructor === Constructor;
 };
 
 /**
@@ -293,12 +287,46 @@ function Model (data) {
 	// ensure the schema set
 	if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
 
-	var set = function (data) { merge(this, data); }
+	var set = function (data, tree, object) {
+		tree = (tree instanceof Tree)? tree : self.schema.tree;
+		object = (typeof object === 'object')? object : this;
+		for (var prop in data) {
+			// encapsulate each iteration in a scope
+			!function (prop) {
+				// if not in tree, return and continue on
+				if (!tree[prop]) return;
+				// if the property is an object, check if the tree property
+				// is a Tree instance object too
+				if (typeof data[prop] === 'object' && tree[prop] instanceof Tree) {
+					// define setter for object
+					define(data[prop], 'set', {
+						writable : false,
+						enumerable : false,
+						configurable : false,
+						value : function (value) { object[prop] = value; }
+					});
+					// define getter for object
+					define(data[prop], 'get', {
+						writable : false,
+						enumerable : false,
+						configurable : false,
+						value : function () { return object[prop] }
+					});
+
+					this.set(data[prop], tree[prop], object[prop]);
+				}
+				// we've reached some kind of scalar value 
+				// that exists in the schema tree and the object
+				else {
+					object[prop] = data[prop];
+				}
+			}.call(this, prop);
+		}
+	}.bind(this);
 	// overload refresh method on prototype
 	var refresh = function () {
 		if (isFrozen(this)) return false;
-		// IIFE for recursive definiton
-		!function defineFromTree (tree, scope, table) {
+		var defineFromTree = function (tree, scope, table) {
 			var item
 			for (item in tree) {
 				!function (item) {
@@ -307,8 +335,13 @@ function Model (data) {
 						define(scope, item, {
 							configurable : false,
 							enumerable : true,
-							get : function () { return table[item]? tree[item].get(table[item]) : undefined; },
-							set : function (value) { table[item] = tree[item].set(value) }
+							get : function () { 
+								return table[item]? tree[item].get(table[item]) : undefined; 
+							},
+							set : function (value) {
+								if (tree[item].validate(value))
+									table[item] = tree[item].set(value);
+							}
 						});
 					}
 					else if (tree[item] instanceof Tree) {
@@ -318,29 +351,30 @@ function Model (data) {
 					}
 				}.call(self, item);
 			}
-		}.call(this, self.schema.tree, this, table);
-
+		}.bind(this);
+		// define
+		defineFromTree(self.schema.tree, this, table);
+		// free if in strict mode
 		if (this.schema.options.strict) freeze(this);
 	};
 	// overload set method on prototype
 	define(this, 'set', {
 		configurable : false,
 		enumerable : false,
-		writeable : false,
+		writable : false,
 		value : set
 	 });
 
 	define(this, 'refresh', {
 		configurable : false,
 		enumerable : false,
-		writeable : false,
+		writable : false,
 		value : refresh
 	 });
 	// call a refresh to init schema
 	this.refresh();
 	// set  data
 	data && this.set(data);
-	//console.log(table)
 }
 
 /**
