@@ -3,7 +3,11 @@
   "repo": "jwerle/draft",
   "description": "Construct Object schemas and models",
   "version": "0.0.2",
-  "keywords": [],
+  "keywords": [
+    "object",
+    "schema",
+    "model"
+  ],
   "dependencies": {},
   "development": {},
   "license": "MIT",

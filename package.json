@@ -1,12 +1,12 @@
 {
   "name": "draft",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Construct Object schemas and models",
   "main": "index.js",
   "scripts": {
     "test": "make test"
   },
-  "repository": "",
+  "repository": "git://github.com/jwerle/draft.git",
   "keywords": [
     "object",
     "schema",

@@ -16,4 +16,4 @@ install:
 test: install
 	@./node_modules/mocha/bin/mocha -R spec
 
-.PHONY: all clean install test components
+.PHONY: all clean install test components build

@@ -65,8 +65,28 @@ function isFunction (input) {
  * @api private
  * @param {Mixed} input
  */
-function isBoolean(input) {
+function isBoolean (input) {
 	return (typeof input === 'boolean');
+}
+
+/**
+ * Checks whether the input is a undefined
+ *
+ * @api private
+ * @param {Mixed} input
+ */
+function isUndefined (input) {
+	return (typeof input === 'undefined');
+}
+
+/**
+ * Checks whether the input is a null
+ *
+ * @api private
+ * @param {Mixed} input
+ */
+function isNull (input) {
+	return (input === null);
 }
 
 /**
@@ -77,6 +97,16 @@ function isBoolean(input) {
  */
 function isString (input) {
 	return (typeof input === 'string');
+}
+
+/**
+ * Checks whether the input is a NaN
+ *
+ * @api private
+ * @param {Mixed} input
+ */
+function isTrueNaN (input) {
+	return (isNaN(input) && input !== NaN && typeof input === 'number');
 }
 
 /**
@@ -111,6 +141,31 @@ function draft (descriptor, options) {
 	var schema = new Schema(descriptor, options)
 		,	model  = schema.createModel();
 	return model;
+}
+
+/**
+ * Creates a schema
+ *
+ * @api public
+ * @function draft.createSchema
+ * @param {Object} descriptor
+ * @param {Object} options
+ */
+draft.createSchema = function (descriptor, options) {
+	return new Schema(descriptor, options);
+}
+
+/**
+ * Creates a model from a schema
+ *
+ * @api public
+ * @function draft.createModel
+ * @param {Schema} schema
+ * @param {Object} options
+ */
+draft.createModel = function (schema, options) {
+	if (! (schema instanceof Schema)) throw new TypeError("draft.createModel expects an instance of Schema");
+	else return schema.createModel(options);
 }
 
 /**
@@ -153,22 +208,60 @@ Schema.prototype.add = function () {
 };
 
 /**
+ * Creates a static function for the created model
+ *
+ * @api public
+ * @function Schema#.static
+ * @param {String} name
+ * @param {Function} func
+ */
+Schema.prototype.static = function (name, func) {
+	if (isPlainObject(name)) {
+		for (func in name) {
+			this.static(func, name[func]);
+		}
+	}
+	else {
+		if (!isString(name)) throw new TypeError("Schema#static exepects a string identifier as a function name");
+		else if (!isFunction(func)) throw new TypeError("Schema#static exepects a function as a handle");
+		this.add(name, { type: Function, static: true, value: func });
+	}
+};
+
+/**
  * Creates a constructor from the defined schema
  *
  * @api public
  * @function Schema#createModel
+ * @param {Object} options
  */
-Schema.prototype.createModel = function () {
+Schema.prototype.toModel = Schema.prototype.createModel = function (options, proto) {
 	var self = this
+	options = (isPlainObject(options))? options : {};
 	function InstanceModel () { return Model.apply(this, arguments); }
 	InstanceModel.prototype = Object.create(Model.prototype);
 	InstanceModel.prototype.schema = this;
+	// sugar to not use the 'new' operator
+	InstanceModel.create = function (data, schema) { return new this(data, schema); }.bind(InstanceModel);
 	// only scan top level
 	for (var item in this.tree) {
-		if (this.tree[item].static === true) {
-			InstanceModel[item]
+		// prevent overrides
+		if (!isUndefined(InstanceModel[item])) continue;
+		// it must be defined and have a valid function value
+		if (this.tree[item].static === true && !isUndefined(this.tree[item].value)) {
+			InstanceModel[item] = this.tree[item].value;
 		}
 	}
+
+	if (typeof proto === 'object') {
+		for (var item in proto) {
+			// prevent overrides
+			if (!isUndefined(InstanceModel.prototype[item])) continue;
+			InstanceModel.prototype[item] = proto[item];
+		}
+	}
+	// if the user wants to alloq modifications  
+	if (options.freeze !== false) freeze(InstanceModel);
 	return InstanceModel
 };
 
@@ -192,11 +285,20 @@ Schema.prototype.new = function (data) {
  * @constructor Tree
  * @api public
  * @param {Object} object
+ * @param {Object} options
  */
-function Tree (object) {
+function Tree (object, options) {
 	// ensure we have an object
-	if (object !== undefined && !isPlainObject(object)) throw new TypeError("Tree only expects an object");
+	if (!isArray(object) && object !== undefined && object !== null && !isPlainObject(object))
+		throw new TypeError("Tree only expects an object");
 	else this.add(object);
+
+	if (isPlainObject(options) && options.array === true) {
+		var array = []
+		array.__proto__ = this;
+		array.type = new Type(options.type)
+		return array;
+	}
 }
 
 /**
@@ -230,6 +332,14 @@ Tree.prototype.add = function (parent, key, descriptor) {
 			else if (isFunction(descriptor)) {
 				this[key]	= new Type(descriptor);
 			}
+			else if (isArray(descriptor)) {
+				if (descriptor.length && isFunction(descriptor[0])) {
+					this[key] = new Tree(null, { array: true, type: descriptor[0] });
+				}
+				else {
+					this[key] = [];
+				}
+			}
 		}
 		else if (isString(parent) && key) {
 			descriptor = key
@@ -238,6 +348,7 @@ Tree.prototype.add = function (parent, key, descriptor) {
 		}
 	}
 };
+
 
 /**
  * Creates a Type used in a Tree instance for a 
@@ -266,6 +377,14 @@ function Type (Constructor, descriptor) {
 	if (isArray(descriptor.enum)) (this.enum = descriptor.enum) && delete descriptor.enum;
 	// check if strict mode
 	if (isBoolean(descriptor.strict)) (this.strict = descriptor.strict) && delete descriptor.strict;
+	// check if static
+	if (isBoolean(descriptor.static)) (this.static = descriptor.static) && delete descriptor.static;
+	// check if has set value
+	if (descriptor.value) (this.value = descriptor.value) && delete descriptor.value;
+	// check if has default
+	if (descriptor.default) (this.default = descriptor.default) && delete descriptor.default;
+	// check if has validator
+	if (isFunction(descriptor.validator)) (this.validator = descriptor.validator) && delete descriptor.validator;
 }
 
 /**
@@ -301,7 +420,13 @@ Type.prototype.set = function (value) {
  */
 Type.prototype.validate = function (input) {
 	var Constructor
+	// validate with validator first if present
+	if (isFunction(this.validator) && !this.validator(input)) return false;
+	// if not strict mode then we don't need to validate anything
 	if (this.strict === false) return true;
+	// if its an object and the type constructor is
+	// not an object then validate that it is an 
+	// actual instance of the type constructor 
 	if (typeof input === 'object' && this.Constructor !== Object)
 		return (input instanceof this.Constructor);
 	// check for enumerated values
@@ -339,7 +464,9 @@ Type.prototype.coerce = function (input) {
  * @api public
  * @param {Object} data
  */
-function Model (data) {
+function Model (data, schema) {
+	if (! (this instanceof Model)) return new Model(data, schema);
+	if (schema instanceof Schema) this.schema = schema;
 	var self = this
 	/** internal memory **/
 	var table = {};
@@ -348,7 +475,7 @@ function Model (data) {
 	// ensure the schema set
 	if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
 
-	var set = function (data, tree, object) {
+	var build = function (data, tree, object) {
 		tree = (tree instanceof Tree)? tree : self.schema.tree;
 		object = (typeof object === 'object')? object : this;
 		for (var prop in data) {
@@ -374,7 +501,7 @@ function Model (data) {
 						value : function () { return object[prop] }
 					});
 
-					this.set(data[prop], tree[prop], object[prop]);
+					build(data[prop], tree[prop], object[prop]);
 				}
 				// we've reached some kind of scalar value 
 				// that exists in the schema tree and the object
@@ -391,8 +518,15 @@ function Model (data) {
 			var item
 			for (item in tree) {
 				!function (item) {
+					// we don't want this as a possible field
+					if (tree[item].static) return
+					// it must be an instance of Type
 					if (tree[item] instanceof Type) {
+						// if it doesn't exist in the internal table
+						// then set it to undefined
 						table[item] = table[item] || undefined;
+						// create descriptor for property item on scope
+						// from tree descriptor
 						define(scope, item, {
 							configurable : false,
 							enumerable : true,
@@ -405,13 +539,71 @@ function Model (data) {
 							}
 						});
 					}
-					else if (tree[item] instanceof Tree) {
-						table[item] = table[item] || {};						
-						scope[item] = {};
+					// if it is a tree instance then we need
+					// to do a recursive call to define the
+					// descriptors needed for the object
+					else if (tree[item] instanceof Tree || isArray(tree[item])) {
+						table[item] = table[item] || isArray(tree[item])? [] : {};
+
+						if (isArray(tree[item])) {
+							define(scope, item, {
+								configurable: false,
+								enumerable : true,
+								writable: false,
+								value: table[item]
+							});
+						}
+						else {
+							define(scope, item, {
+								configurable: false,
+								enumerable : true,
+								writable : false,
+								value : {}
+							});
+						}
+
+						define(scope[item], 'get', {
+							configurable: false,
+							enumerable: false,
+							writable: false,
+							value: function (key) { return table[item][key]; }
+						});
+
+						define(scope[item], 'set', {
+							configurable: false,
+							enumerable: false,
+							writable: false,
+							value: function (value) { table[item][key] = value; }
+						});
+
+						// overload array methods
+						if (isArray(tree[item])) {
+							[
+								'concat', 'every', 'filter', 'forEach', 'indexOf', 'join', 'lastIndexOf', 'map', 'pop',
+								'push', 'reduce', 'reduceRight', 'reverse', 'shift', 'slice', 'some', 'sort', 'splice',
+								'toString', 'unshift', 'valueOf'
+							].map(function (method) {
+								if (isFunction([][method])) {
+									define(scope[item], method, {
+										configurable: false,
+										enumerable: false,
+										writable: false,
+										value: function (value) {
+											return tree[item].type.validate(value) && [][method].apply(table[item], arguments);
+										}
+									});
+								}
+							});
+						}
+
+						// recursive call to define descriptors
 						defineFromTree.call(self, tree[item], scope[item], table[item]);
 					}
 				}.call(self, item);
 			}
+			
+			//if (this.schema.options.strict && scope !== this) 
+				//freeze(scope)
 		}.bind(this);
 		// define
 		defineFromTree(self.schema.tree, this, table);
@@ -423,7 +615,18 @@ function Model (data) {
 		configurable : false,
 		enumerable : false,
 		writable : false,
-		value : set
+		value : function (key, value) {
+			this[key] = value
+		}
+	 });
+
+	define(this, 'get', {
+		configurable : false,
+		enumerable : false,
+		writable : false,
+		value : function (key) {
+			return table[key]
+		}
 	 });
 
 	define(this, 'refresh', {
@@ -432,10 +635,47 @@ function Model (data) {
 		writable : false,
 		value : refresh
 	 });
+
+	define(this, 'toObject', {
+		configurable: false,
+		enumerable : false,
+		writable : false,
+		value : function () {
+			return table;
+		}
+	});
+
+	define(this, 'toJSON', {
+		configurable: false,
+		enumerable : false,
+		writable : false,
+		value : function () {
+			return table;
+		}
+	});
+
+	define(this, 'toString', {
+		configurable: false,
+		enumerable : false,
+		writable : false,
+		value : function () {
+			return '[object Model]';
+		}
+	});
+
+	define(this, 'valueOf', {
+		configurable: false,
+		enumerable : false,
+		writable : false,
+		value : function () {
+			return this.toObject();
+		}
+	});
+
 	// call a refresh to init schema
 	this.refresh();
 	// set  data
-	data && this.set(data);
+	data && build(data);
 }
 
 /**
@@ -447,7 +687,11 @@ function Model (data) {
 Model.prototype.schema;
 
 /**
+ * Refreshes the state of the model based on its schema
  *
+ * @api public
+ * @function Model#refresh
+ * @interface 
  */
 Model.prototype.refresh = function () {};
 
@@ -456,6 +700,43 @@ Model.prototype.refresh = function () {};
  *
  * @api public
  * @function Model#set
- * @param {Object} data
+ * @interface 
  */
 Model.prototype.set = function () {};
+
+/**
+ * Returns a plain object representation of the model
+ *
+ * @api public
+ * @function Model#toObject
+ * @interface 
+ */
+Model.prototype.toObject = function () {};
+
+/**
+ * Called with JSON.stringify
+ *
+ * @api public
+ * @function Model#toJSON
+ * @interface 
+ */
+Model.prototype.toJSON = function () {};
+
+/**
+ * Returns a string representation of a Model instance
+ *
+ * @api public
+ * @function Model#toString
+ * @interface 
+ */
+Model.prototype.toString = function () {};
+
+/**
+ * Returns a value representation of a Model instance
+ *
+ * @api public
+ * @function Model#valueOf
+ * @interface 
+ */
+Model.prototype.valueOf = function () {};
+

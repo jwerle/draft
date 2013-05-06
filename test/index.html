@@ -17,11 +17,22 @@
       </div>
       <script type="text/javascript">
         var draft = require('draft')
-        var User = draft({ name: String, email: String })
-          , Post = draft({ owner: Object, content: String })
+        var UserSchema, PostSchema, User, Post, werle, post
+        // define the user schema
+        UserSchema = draft.createSchema({ name: String, email: String, networks: [Object] });
+        // create the model for use in the post schema
+        User = UserSchema.createModel();
+        // create the post schema to add to the user schema
+        PostSchema = draft.createSchema({ owner: User, content: String });
 
-        var werle = new User({ name: 'werle', email: 'joseph@werle.io' })
-          , post  = new Post({ owner: werle, content: "I like draft :)"})
+        UserSchema.add({ profile: { friends: [User] }});
+
+        Post = PostSchema.createModel();
+
+        UserSchema.add({ posts: [Post] });
+
+        werle = new User({ name: 'werle', email: 'joseph@werle.io' });
+        post  = new Post({ owner: werle, content: "I like draft :)"});
       </script>
   </body>
 </html>
