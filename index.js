@@ -328,8 +328,8 @@ Type.prototype.validate = function (input) {
  * @param {Mixed} input
  */
 Type.prototype.coerce = function (input) {
-	return (this.Constructor !== Function)? this.Constructor(input)
-					: input;
+	try { return this.Constructor(input); }
+	catch (e) { return input; }
 };
 
 /**

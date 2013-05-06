@@ -14,6 +14,7 @@
   "ignore": [
     "**/.*",
     "node_modules",
-    "components"
+    "components",
+    "build"
   ]
 }
