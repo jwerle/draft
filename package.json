@@ -17,8 +17,8 @@
   "devDependencies": {
     "mocha": "~1.9.0"
   },
-  "harness" : "mocha",
   "testling": {
+    "harness" : "mocha",
     "files": "test/*.js",
     "browsers": {
       "ie" : [ 10 ],
