@@ -188,7 +188,7 @@ draft.Model  = Model;
  */
 function Schema (descriptor, options) {
 	// we must use plain objects
-	if (descriptor !== undefined && !isPlainObject(descriptor)) 
+	if (descriptor !== undefined && descriptor !== null) 
 		throw new TypeError("Schema only expects an object as a descriptor. Got '"+ typeof descriptor +"'");
 	// create tree instance with an empty object
 	this.tree = new Tree({});
