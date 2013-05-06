@@ -164,7 +164,8 @@ draft.createSchema = function (descriptor, options) {
  * @param {Object} options
  */
 draft.createModel = function (schema, options) {
-	if (! (schema instanceof Schema)) throw new TypeError("draft.createModel expects an instance of Schema");
+	if (! (schema instanceof Schema)) 
+		throw new TypeError("draft.createModel expects an instance of Schema. Got '"+ typeof schema +"'");
 	else return schema.createModel(options);
 }
 
@@ -187,7 +188,8 @@ draft.Model  = Model;
  */
 function Schema (descriptor, options) {
 	// we must use plain objects
-	if (descriptor !== undefined && !isPlainObject(descriptor)) throw new TypeError("Schema only expects an object as a descriptor");
+	if (descriptor !== undefined && !isPlainObject(descriptor)) 
+		throw new TypeError("Schema only expects an object as a descriptor. Got '"+ typeof descriptor +"'");
 	// create tree instance with an empty object
 	this.tree = new Tree({});
 	// add descriptor to tree
