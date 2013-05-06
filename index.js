@@ -60,6 +60,16 @@ function isFunction (input) {
 }
 
 /**
+ * Checks whether the input is a boolean
+ *
+ * @api private
+ * @param {Mixed} input
+ */
+function isBoolean(input) {
+	return (typeof input === 'boolean');
+}
+
+/**
  * Checks whether the input is a string
  *
  * @api private
@@ -77,6 +87,17 @@ function isString (input) {
  */
 function toArray (input) {
 	return Array.prototype.slice.call(arguments, 0);
+}
+
+/**
+ * CHecks whether a given input is in an array
+ *
+ * @api private
+ * @param {Array} array
+ * @param {Mixed} needle
+ */
+function inArray (array, needle) {
+	return !!~array.indexOf(needle);
 }
 
 /**
@@ -210,7 +231,7 @@ function Type (Constructor, descriptor) {
 	// check if the values of this property are enumerable
 	if (isArray(descriptor.enum)) (this.enum = descriptor.enum) && delete descriptor.enum;
 	// check if strict mode
-	if (descriptor.strict) (this.strict = descriptor.strict) && delete descriptor.strict;
+	if (isBoolean(descriptor.strict)) (this.strict = descriptor.strict) && delete descriptor.strict;
 }
 
 /**
@@ -246,8 +267,13 @@ Type.prototype.set = function (value) {
  */
 Type.prototype.validate = function (input) {
 	var Constructor
+	if (this.strict === false) return true;
 	if (typeof input === 'object' && this.Constructor !== Object)
 		return (input instanceof this.Constructor);
+	// check for enumerated values
+	if (isArray(this.enum)) {
+		return inArray(this.enum, input);
+	}
 	// check input for primitive types
 	switch (typeof input) {
 		case 'string':   Constructor = String;   break;
