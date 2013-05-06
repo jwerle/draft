@@ -64,7 +64,8 @@ describe("draft", function () {
               mother : { name : String },
               father : { name : String }
             }
-          }
+          },
+          parents : Function
         });
 
 
@@ -78,6 +79,29 @@ describe("draft", function () {
         assert.ok(schema.tree.profile.gender.Constructor === String, "Failed to create .profile.gender type");
         assert.ok(schema.tree.profile.parents.mother.name.Constructor === String, "Failed to create .profile.parents.mother.name type");
         assert.ok(schema.tree.profile.parents.father.name.Constructor === String, "Failed to create .profile.parents.father.name type");
+
+        var Person = schema.createModel();
+        var joe = new Person({
+          parents : function () {
+            var parents = this.profile.parents
+              , names = []
+            for (var parent in parents) {
+              names.push(parents[parent].name)
+            }
+            return names;
+          },
+          name : 'Joe',
+          profile : {
+            age : 22,
+            gender : 'male',
+            parents : {
+              mother : {name: 'Cherie'},
+              father : {name: 'Keith'}
+            }
+          }
+        });
+
+        console.log(joe.parents())
       });
     });
 

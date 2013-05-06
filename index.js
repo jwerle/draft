@@ -113,16 +113,16 @@ module.exports.Model  = Model;
  *
  * @constructor Schema
  * @api public
- * @param {Object} definiton
+ * @param {Object} descriptor
  * @param {Object} options
  */
-function Schema (definiton, options) {
+function Schema (descriptor, options) {
 	// we must use plain objects
-	if (definiton !== undefined && !isPlainObject(definiton)) throw new TypeError("Schema only expects an object as a definiton");
+	if (descriptor !== undefined && !isPlainObject(descriptor)) throw new TypeError("Schema only expects an object as a descriptor");
 	// create tree instance with an empty object
 	this.tree = new Tree({});
-	// add definiton to tree
-	this.add(definiton);
+	// add descriptor to tree
+	this.add(descriptor);
 	// attach options
 	this.options = merge({ strict : true}, isPlainObject(options)? options : {});
 }
@@ -139,7 +139,10 @@ Schema.prototype.add = function () {
 };
 
 /**
+ * Creates a constructor from the defined schema
  *
+ * @api public
+ * @function Schema#createModel
  */
 Schema.prototype.createModel = function () {
 	var self = this
@@ -149,6 +152,19 @@ Schema.prototype.createModel = function () {
 	InstanceModel.prototype = Object.create(Model.prototype);
 	InstanceModel.prototype.schema = this;
 	return InstanceModel
+};
+
+/**
+  * Accepts an object of data and passes it to the
+  * Model constructor from the Schema instance
+  *
+  * @api public
+  * @function Schema#new
+  * @param {Object} data
+  */
+Schema.prototype.new = function (data) {
+	var model = this.createModel()
+	return new model(data);
 };
 
 /**
@@ -294,7 +310,8 @@ Type.prototype.validate = function (input) {
  * @param {Mixed} input
  */
 Type.prototype.coerce = function (input) {
-	return this.Constructor(input)
+	return (this.Constructor !== Function)? this.Constructor(input)
+					: input;
 };
 
 /**
