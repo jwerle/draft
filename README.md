@@ -102,10 +102,13 @@ user.somePropertyNotInSchema // undefined
 
 ## todo
 
-* document more
-* write more tests
 * provide static property support
 * provide instance property support (prototype?)
+* write more tests
+* document more
+* publish to npm
+* publish to component
+* publish to bower
 
 ## license
 
