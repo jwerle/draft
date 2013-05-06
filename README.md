@@ -11,8 +11,22 @@ Give your object and models schemas
 
 ## install
 
+*nodejs*
+
 ```sh
 $ npm install draft --save
+```
+
+*component*
+
+```sh
+$ component install jwerle/draft
+```
+
+*bower*
+
+```sh
+$ bower install draft
 ```
 
 ## usage
