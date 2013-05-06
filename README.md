@@ -130,9 +130,6 @@ user.somePropertyNotInSchema // undefined
 * provide instance property support (prototype?)
 * write more tests
 * document more
-* publish to npm
-* publish to component
-* publish to bower
 
 ## license
 
