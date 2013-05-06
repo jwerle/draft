@@ -15,6 +15,18 @@ Give your object and models schemas
 $ npm install draft --save
 ```
 
+## usage
+
+Creating a model with draft is as simple as passing it a schema descriptor
+
+```js
+var User = draft({ name: String, email: String })
+  , Post = draft({ owner: Object, content: String })
+
+var werle = new User({ name: 'werle', email: 'joseph@werle.io' })
+  , post  = new Post({ owner: werle, content: "I like draft :)"})
+```
+
 ## api
 
 ### Schema(descriptor, options)
@@ -83,11 +95,9 @@ Instantiate the model passing in an object. In strict mode all properties on an 
 
 ```js
 var user = new User({
-	name : 'werle',
-	profile : {
-		email : 'joseph@werle.io'
-	},
-	somePropertyNotInSchema : 'someValue'
+	name: 'werle',
+	profile: { email: 'joseph@werle.io' },
+	somePropertyNotInSchema: 'someValue'
 });
 
 ```

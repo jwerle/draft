@@ -101,12 +101,26 @@ function inArray (array, needle) {
 }
 
 /**
+ * @namespace draft
+ * @api public
+ * @function draft
+ * @param {Object} descriptor
+ * @param {Object} options
+ */
+function draft (descriptor, options) {
+	var schema = new Schema(descriptor, options)
+		,	model  = schema.createModel();
+	return model;
+}
+
+/**
  * Exports
  */
-module.exports.Schema = Schema
-module.exports.Tree   = Tree;
-module.exports.Type   = Type;
-module.exports.Model  = Model;
+module.exports = draft;
+draft.Schema = Schema
+draft.Tree   = Tree;
+draft.Type   = Type;
+draft.Model  = Model;
 
 /**
  * Creats an object schema
@@ -146,11 +160,15 @@ Schema.prototype.add = function () {
  */
 Schema.prototype.createModel = function () {
 	var self = this
-	function InstanceModel () {
-		return Model.apply(this, arguments); 
-	}
+	function InstanceModel () { return Model.apply(this, arguments); }
 	InstanceModel.prototype = Object.create(Model.prototype);
 	InstanceModel.prototype.schema = this;
+	// only scan top level
+	for (var item in this.tree) {
+		if (this.tree[item].static === true) {
+			InstanceModel[item]
+		}
+	}
 	return InstanceModel
 };
 

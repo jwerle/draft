@@ -5,6 +5,22 @@ describe("draft", function () {
     , Model  = draft.Model
     , Model  = draft.Model
 
+  describe("draft(descriptor, options)", function () {
+    it("Should accept an object as a descriptor and an object of options", function () {
+      var User = draft({ name: String, email: String })
+        , Post = draft({ owner: Object, content: String })
+
+      var werle = new User({ name: 'werle', email: 'joseph@werle.io' })
+        , post  = new Post({ owner: werle, content: "I like draft :)"})
+
+      assert.ok(werle.name === 'werle');
+      assert.ok(werle.email === 'joseph@werle.io');
+
+      assert.ok(post.owner === werle);
+      assert.ok(post.content === "I like draft :)");
+    });
+  });
+
   describe("Schema", function () {
     describe("Should only accept a plain object or undefined as an argument", function () {
       it("Should accept a 'undefined'", function () {
@@ -101,7 +117,8 @@ describe("draft", function () {
           }
         });
 
-        console.log(joe.parents())
+        assert.ok(!!~joe.parents().indexOf(joe.profile.parents.mother.name));
+        assert.ok(!!~joe.parents().indexOf(joe.profile.parents.father.name));
       });
     });
 
