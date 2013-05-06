@@ -159,7 +159,27 @@ describe("draft", function () {
     });
   });
 
-  describe("Model", function () {
-    
+  describe(".createModel .createSchema", function () {
+    it("Should be able to create models and schemas and allow later changes to propagate", function () {
+      var UserSchema, PostSchema, User, Post, werle, post
+      // define the user schema
+      UserSchema = draft.createSchema({ name: String, email: String, networks: [Object] });
+      // create the model for use in the post schema
+      User = UserSchema.createModel();
+      // create the post schema to add to the user schema
+      PostSchema = draft.createSchema({ owner: User, content: String });
+      // add profile object with friends collection set to User type
+      UserSchema.add({ profile: { friends: [User] }});
+      // create Post model
+      Post = PostSchema.createModel();
+      // add posts collection to user schema and use Post model as type
+      UserSchema.add({ posts: [Post] });
+      // create 'werle' user
+      werle = new User({ name: 'werle', email: 'joseph@werle.io' });
+      // create post owned by 'werle'
+      post  = new Post({ owner: werle, content: "I like draft :)"});
+      // push post to user object
+      werle.posts.push(post);
+    });
   });
 });

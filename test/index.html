@@ -24,15 +24,18 @@
         User = UserSchema.createModel();
         // create the post schema to add to the user schema
         PostSchema = draft.createSchema({ owner: User, content: String });
-
+        // add profile object with friends collection set to User type
         UserSchema.add({ profile: { friends: [User] }});
-
+        // create Post model
         Post = PostSchema.createModel();
-
+        // add posts collection to user schema and use Post model as type
         UserSchema.add({ posts: [Post] });
-
+        // create 'werle' user
         werle = new User({ name: 'werle', email: 'joseph@werle.io' });
+        // create post owned by 'werle'
         post  = new Post({ owner: werle, content: "I like draft :)"});
+        // push post to user object
+        werle.posts.push(post);
       </script>
   </body>
 </html>

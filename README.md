@@ -5,7 +5,9 @@ Give your object and models schemas
 
 --
 
-***This is a work in progress... Feel free to check it out though***
+[![Build Status](https://travis-ci.org/jwerle/draft.png?branch=master)](https://travis-ci.org/jwerle/draft)
+
+[![browser support](https://ci.testling.com/jwerle/draft.png)](https://ci.testling.com/jwerle/draft)
 
 --
 

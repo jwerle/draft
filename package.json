@@ -16,5 +16,9 @@
   "license": "MIT",
   "devDependencies": {
     "mocha": "~1.9.0"
+  },
+  "testling": {
+    "files": "test/*.js",
+    "browsers": [ "ie8", "ie9", "ff/13", "chrome/20" ]
   }
 }
