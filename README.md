@@ -126,8 +126,6 @@ user.somePropertyNotInSchema // undefined
 
 ## todo
 
-* provide static property support
-* provide instance property support (prototype?)
 * write more tests
 * document more
 
