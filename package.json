@@ -1,6 +1,6 @@
 {
   "name": "draft",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Construct Object schemas and models",
   "main": "index.js",
   "scripts": {
