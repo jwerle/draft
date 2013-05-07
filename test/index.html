@@ -7,7 +7,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title></title>
-    <script src="../build/build.js"></script>
+    <script src="../draft.min.js"></script>
   </head>
     <body>
       <div class="container">
@@ -16,7 +16,7 @@
         </div>
       </div>
       <script type="text/javascript">
-        var draft = require('draft')
+        var draft = draft || require('draft')
         var UserSchema, PostSchema, User, Post, werle, post
         // define the user schema
         UserSchema = draft.createSchema({ name: String, email: String, networks: [Object] });
