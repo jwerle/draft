@@ -44,10 +44,8 @@ function merge(obj1, obj2) {
  * @param {Mixed} input
  */
 function isPlainObject (input) {
-  if (typeof input !== 'object') return false;
-  else if (input === null) return false;
-  else if (input.__proto__ !== Object.prototype) return false;
-  else return true;
+  if (input !== null && typeof input === 'object' && input.constructor === Object) return true;
+  else return false;
 }
 
 /**
@@ -201,7 +199,7 @@ draft.Model  = Model;
  */
 function Schema (descriptor, options) {
   // we must use plain objects
-  if (descriptor !== undefined && !isPlainObject(descriptor)) 
+  if (typeof descriptor !== 'undefined' && !isPlainObject(descriptor)) 
     throw new TypeError("Schema only expects an object as a descriptor. Got '"+ typeof descriptor +"'");
   // create tree instance with an empty object
   this.tree = new Tree({});
