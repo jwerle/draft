@@ -1,5 +1,5 @@
 	if (typeof module === "object" && typeof module.exports === "object") {
-		module.exports = jQuery;
+		module.exports = require('draft');
 	} 
 	else {
 		if (typeof define === "function" && define.amd) {
