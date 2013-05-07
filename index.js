@@ -2,9 +2,10 @@
  * Module dependencies
  */
 var define   = Object.defineProperty
-	,	freeze   = Object.freeze
-	,	isFrozen = Object.isFrozen
-	,	isArray  = Array.isArray
+  , freeze   = Object.freeze
+  , isFrozen = Object.isFrozen
+  , isArray  = Array.isArray
+  , toString = Object.prototype.toString
 
 /**
  * Merges two or more objects together. Also performs deep merging
@@ -43,10 +44,10 @@ function merge(obj1, obj2) {
  * @param {Mixed} input
  */
 function isPlainObject (input) {
-	if (typeof input !== 'object') return false;
-	else if (input === null) return false;
-	else if (input.__proto__ !== Object.prototype) return false;
-	else return true;
+  if (typeof input !== 'object') return false;
+  else if (input === null) return false;
+  else if (input.__proto__ !== Object.prototype) return false;
+  else return true;
 }
 
 /**
@@ -56,7 +57,7 @@ function isPlainObject (input) {
  * @param {Mixed} input
  */
 function isFunction (input) {
-	return (typeof input === 'function');
+  return (typeof input === 'function');
 }
 
 /**
@@ -66,7 +67,7 @@ function isFunction (input) {
  * @param {Mixed} input
  */
 function isBoolean (input) {
-	return (typeof input === 'boolean');
+  return (typeof input === 'boolean');
 }
 
 /**
@@ -76,7 +77,7 @@ function isBoolean (input) {
  * @param {Mixed} input
  */
 function isUndefined (input) {
-	return (typeof input === 'undefined');
+  return (typeof input === 'undefined');
 }
 
 /**
@@ -86,7 +87,7 @@ function isUndefined (input) {
  * @param {Mixed} input
  */
 function isNull (input) {
-	return (input === null);
+  return (input === null);
 }
 
 /**
@@ -96,7 +97,7 @@ function isNull (input) {
  * @param {Mixed} input
  */
 function isString (input) {
-	return (typeof input === 'string');
+  return (typeof input === 'string');
 }
 
 /**
@@ -106,7 +107,7 @@ function isString (input) {
  * @param {Mixed} input
  */
 function isTrueNaN (input) {
-	return (isNaN(input) && input !== NaN && typeof input === 'number');
+  return (isNaN(input) && input !== NaN && typeof input === 'number');
 }
 
 /**
@@ -116,7 +117,7 @@ function isTrueNaN (input) {
  * @param {Mixed} input
  */
 function toArray (input) {
-	return Array.prototype.slice.call(arguments, 0);
+  return Array.prototype.slice.call(arguments, 0);
 }
 
 /**
@@ -127,7 +128,20 @@ function toArray (input) {
  * @param {Mixed} needle
  */
 function inArray (array, needle) {
-	return !!~array.indexOf(needle);
+  return !!~array.indexOf(needle);
+}
+
+/**
+ * Draft object
+ *
+ * @api public
+ * @constructor Draft
+ * @param {Object} descriptor
+ * @param {Object} options
+ */
+function Draft (descriptor, options) {
+  this.schema = new Schema(descriptor, options);
+  this.Model  = this.schema.createModel();
 }
 
 /**
@@ -138,9 +152,7 @@ function inArray (array, needle) {
  * @param {Object} options
  */
 function draft (descriptor, options) {
-	var schema = new Schema(descriptor, options)
-		,	model  = schema.createModel();
-	return model;
+  return (new Draft(descriptor, options)).Model;
 }
 
 /**
@@ -152,7 +164,7 @@ function draft (descriptor, options) {
  * @param {Object} options
  */
 draft.createSchema = function (descriptor, options) {
-	return new Schema(descriptor, options);
+  return new Schema(descriptor, options);
 }
 
 /**
@@ -164,15 +176,16 @@ draft.createSchema = function (descriptor, options) {
  * @param {Object} options
  */
 draft.createModel = function (schema, options) {
-	if (! (schema instanceof Schema)) 
-		throw new TypeError("draft.createModel expects an instance of Schema. Got '"+ typeof schema +"'");
-	else return schema.createModel(options);
+  if (! (schema instanceof Schema)) 
+    throw new TypeError("draft.createModel expects an instance of Schema. Got '"+ typeof schema +"'");
+  else return schema.createModel(options);
 }
 
 /**
  * Exports
  */
 module.exports = draft;
+draft.Draft  = Draft;
 draft.Schema = Schema
 draft.Tree   = Tree;
 draft.Type   = Type;
@@ -187,15 +200,15 @@ draft.Model  = Model;
  * @param {Object} options
  */
 function Schema (descriptor, options) {
-	// we must use plain objects
-	if (descriptor !== undefined && !isPlainObject(descriptor)) 
-		throw new TypeError("Schema only expects an object as a descriptor. Got '"+ typeof descriptor +"'");
-	// create tree instance with an empty object
-	this.tree = new Tree({});
-	// add descriptor to tree
-	this.add(descriptor);
-	// attach options
-	this.options = merge({ strict : true}, isPlainObject(options)? options : {});
+  // we must use plain objects
+  if (descriptor !== undefined && !isPlainObject(descriptor)) 
+    throw new TypeError("Schema only expects an object as a descriptor. Got '"+ typeof descriptor +"'");
+  // create tree instance with an empty object
+  this.tree = new Tree({});
+  // add descriptor to tree
+  this.add(descriptor);
+  // attach options
+  this.options = merge({ strict : true}, isPlainObject(options)? options : {});
 }
 
 /**
@@ -206,7 +219,7 @@ function Schema (descriptor, options) {
  * @see Tree#add
  */
 Schema.prototype.add = function () {
-	this.tree.add.apply(this.tree, arguments);
+  this.tree.add.apply(this.tree, arguments);
 };
 
 /**
@@ -218,16 +231,16 @@ Schema.prototype.add = function () {
  * @param {Function} func
  */
 Schema.prototype.static = function (name, func) {
-	if (isPlainObject(name)) {
-		for (func in name) {
-			this.static(func, name[func]);
-		}
-	}
-	else {
-		if (!isString(name)) throw new TypeError("Schema#static exepects a string identifier as a function name");
-		else if (!isFunction(func)) throw new TypeError("Schema#static exepects a function as a handle");
-		this.add(name, { type: Function, static: true, value: func });
-	}
+  if (isPlainObject(name)) {
+    for (func in name) {
+      this.static(func, name[func]);
+    }
+  }
+  else {
+    if (!isString(name)) throw new TypeError("Schema#static exepects a string identifier as a function name");
+    else if (!isFunction(func)) throw new TypeError("Schema#static exepects a function as a handle");
+    this.add(name, { type: Function, static: true, value: func });
+  }
 };
 
 /**
@@ -238,33 +251,33 @@ Schema.prototype.static = function (name, func) {
  * @param {Object} options
  */
 Schema.prototype.toModel = Schema.prototype.createModel = function (options, proto) {
-	var self = this
-	options = (isPlainObject(options))? options : {};
-	function InstanceModel () { return Model.apply(this, arguments); }
-	InstanceModel.prototype = Object.create(Model.prototype);
-	InstanceModel.prototype.schema = this;
-	// sugar to not use the 'new' operator
-	InstanceModel.create = function (data, schema) { return new this(data, schema); }.bind(InstanceModel);
-	// only scan top level
-	for (var item in this.tree) {
-		// prevent overrides
-		if (!isUndefined(InstanceModel[item])) continue;
-		// it must be defined and have a valid function value
-		if (this.tree[item].static === true && !isUndefined(this.tree[item].value)) {
-			InstanceModel[item] = this.tree[item].value;
-		}
-	}
+  var self = this
+  options = (isPlainObject(options))? options : {};
+  function InstanceModel () { return Model.apply(this, arguments); }
+  InstanceModel.prototype = Object.create(Model.prototype);
+  InstanceModel.prototype.schema = this;
+  // sugar to not use the 'new' operator
+  InstanceModel.create = function (data, schema) { return new this(data, schema); }.bind(InstanceModel);
+  // only scan top level
+  for (var item in this.tree) {
+    // prevent overrides
+    if (!isUndefined(InstanceModel[item])) continue;
+    // it must be defined and have a valid function value
+    if (this.tree[item].static === true && !isUndefined(this.tree[item].value)) {
+      InstanceModel[item] = this.tree[item].value;
+    }
+  }
 
-	if (typeof proto === 'object') {
-		for (var item in proto) {
-			// prevent overrides
-			if (!isUndefined(InstanceModel.prototype[item])) continue;
-			InstanceModel.prototype[item] = proto[item];
-		}
-	}
-	// if the user wants to alloq modifications  
-	if (options.freeze !== false) freeze(InstanceModel);
-	return InstanceModel
+  if (typeof proto === 'object') {
+    for (var item in proto) {
+      // prevent overrides
+      if (!isUndefined(InstanceModel.prototype[item])) continue;
+      InstanceModel.prototype[item] = proto[item];
+    }
+  }
+  // if the user wants to alloq modifications  
+  if (options.freeze !== false) freeze(InstanceModel);
+  return InstanceModel
 };
 
 /**
@@ -276,8 +289,8 @@ Schema.prototype.toModel = Schema.prototype.createModel = function (options, pro
   * @param {Object} data
   */
 Schema.prototype.new = function (data) {
-	var model = this.createModel()
-	return new model(data);
+  var model = this.createModel()
+  return new model(data);
 };
 
 /**
@@ -290,17 +303,17 @@ Schema.prototype.new = function (data) {
  * @param {Object} options
  */
 function Tree (object, options) {
-	// ensure we have an object
-	if (!isArray(object) && object !== undefined && object !== null && !isPlainObject(object))
-		throw new TypeError("Tree only expects an object");
-	else this.add(object);
+  // ensure we have an object
+  if (!isArray(object) && object !== undefined && object !== null && !isPlainObject(object))
+    throw new TypeError("Tree only expects an object");
+  else this.add(object);
 
-	if (isPlainObject(options) && options.array === true) {
-		var array = []
-		array.__proto__ = this;
-		array.type = new Type(options.type)
-		return array;
-	}
+  if (isPlainObject(options) && options.array === true) {
+    var array = []
+    array.__proto__ = this;
+    array.type = new Type(options.type)
+    return array;
+  }
 }
 
 /**
@@ -314,41 +327,41 @@ function Tree (object, options) {
  * @param {Object} descriptor
  */
 Tree.prototype.add = function (parent, key, descriptor) {
-	// are they just passing in an object as one big descriptor?
-	if (typeof parent === 'object' && arguments.length === 1) {
-		for (var prop in parent) {
-			this.add(this, prop, parent[prop]);
-		}
-	}
-	else {
-		// is this a reference to a child tree?
-		if (parent instanceof Tree) {
-			if (isPlainObject(descriptor)) {
-				if (isFunction(descriptor.type)) {
-					this[key] = new Type(descriptor.type, descriptor);
-				}
-				else {
-					this[key] = new Tree(descriptor);
-				}
-			}
-			else if (isFunction(descriptor)) {
-				this[key]	= new Type(descriptor);
-			}
-			else if (isArray(descriptor)) {
-				if (descriptor.length && isFunction(descriptor[0])) {
-					this[key] = new Tree(null, { array: true, type: descriptor[0] });
-				}
-				else {
-					this[key] = [];
-				}
-			}
-		}
-		else if (isString(parent) && key) {
-			descriptor = key
-			key = parent;
-			this.add(this, key, descriptor);
-		}
-	}
+  // are they just passing in an object as one big descriptor?
+  if (typeof parent === 'object' && arguments.length === 1) {
+    for (var prop in parent) {
+      this.add(this, prop, parent[prop]);
+    }
+  }
+  else {
+    // is this a reference to a child tree?
+    if (parent instanceof Tree) {
+      if (isPlainObject(descriptor)) {
+        if (isFunction(descriptor.type)) {
+          this[key] = new Type(descriptor.type, descriptor);
+        }
+        else {
+          this[key] = new Tree(descriptor);
+        }
+      }
+      else if (isFunction(descriptor)) {
+        this[key] = new Type(descriptor);
+      }
+      else if (isArray(descriptor)) {
+        if (descriptor.length && isFunction(descriptor[0])) {
+          this[key] = new Tree(null, { array: true, type: descriptor[0] });
+        }
+        else {
+          this[key] = [];
+        }
+      }
+    }
+    else if (isString(parent) && key) {
+      descriptor = key
+      key = parent;
+      this.add(this, key, descriptor);
+    }
+  }
 };
 
 
@@ -362,32 +375,48 @@ Tree.prototype.add = function (parent, key, descriptor) {
  * @param {Function} Constructor
  */
 function Type (Constructor, descriptor) {
-	// ensure creation of Type
-	if (!(this instanceof Type)) return new Type(Constructor, descriptor);
-	// ensure descriptor object
-	descriptor = (typeof descriptor === 'object')? descriptor : {};
-	if (!isFunction(Constructor)) throw new TypeError("Type only expects a function");
-	// set the constructor for reference
-	this.Constructor = Constructor;
-	// remove type property from the descriptor if it was set there
-	delete descriptor.type;
-	// check for getter
-	if (isFunction(descriptor.get)) (this.get = descriptor.get) && delete descriptor.get;
-	// check for setter
-	if (isFunction(descriptor.set)) (this.set = descriptor.set) && delete descriptor.set;
-	// check if the values of this property are enumerable
-	if (isArray(descriptor.enum)) (this.enum = descriptor.enum) && delete descriptor.enum;
-	// check if strict mode
-	if (isBoolean(descriptor.strict)) (this.strict = descriptor.strict) && delete descriptor.strict;
-	// check if static
-	if (isBoolean(descriptor.static)) (this.static = descriptor.static) && delete descriptor.static;
-	// check if has set value
-	if (descriptor.value) (this.value = descriptor.value) && delete descriptor.value;
-	// check if has default
-	if (descriptor.default) (this.default = descriptor.default) && delete descriptor.default;
-	// check if has validator
-	if (isFunction(descriptor.validator)) (this.validator = descriptor.validator) && delete descriptor.validator;
+  // ensure creation of Type
+  if (!(this instanceof Type)) return new Type(Constructor, descriptor);
+  // ensure descriptor object
+  descriptor = (typeof descriptor === 'object')? descriptor : {};
+  if (!isFunction(Constructor)) throw new TypeError("Type only expects a function");
+  // set the constructor for reference
+  this.Constructor = Constructor;
+  // remove type property from the descriptor if it was set there
+  delete descriptor.type;
+  // check for getter
+  if (isFunction(descriptor.get)) (this.get = descriptor.get) && delete descriptor.get;
+  // check for setter
+  if (isFunction(descriptor.set)) (this.set = descriptor.set) && delete descriptor.set;
+  // check if the values of this property are enumerable
+  if (isArray(descriptor.enum)) (this.enum = descriptor.enum) && delete descriptor.enum;
+  // check if strict mode
+  if (isBoolean(descriptor.strict)) (this.strict = descriptor.strict) && delete descriptor.strict;
+  // check if static
+  if (isBoolean(descriptor.static)) (this.static = descriptor.static) && delete descriptor.static;
+  // check if has set value
+  if (descriptor.value) (this.value = descriptor.value) && delete descriptor.value;
+  // check if has default
+  if (descriptor.default) (this.default = descriptor.default) && delete descriptor.default;
+  // check if has validator
+  if (isFunction(descriptor.validator)) (this.validator = descriptor.validator) && delete descriptor.validator;
 }
+
+/**
+ * String output of a Type instance
+ */
+Type.prototype.toString = function () {
+  return '[object Type]';
+};
+
+/**
+ * Return original constructor let it handle valueOf
+ */
+Type.prototype.valueOf = function () {
+  return this.Constructor
+};
+
+
 
 /**
  * Default getter that coerces a value
@@ -397,7 +426,7 @@ function Type (Constructor, descriptor) {
  * @param {Mixed} value
  */
 Type.prototype.get = function (value) {
-	return this.coerce(value);
+  return this.coerce(value);
 };
 
 /**
@@ -408,7 +437,7 @@ Type.prototype.get = function (value) {
  * @param {Mixed} value
  */
 Type.prototype.set = function (value) {
-	return this.coerce(value);
+  return this.coerce(value);
 };
 
 /**
@@ -421,30 +450,30 @@ Type.prototype.set = function (value) {
  * @param {Mixed} input
  */
 Type.prototype.validate = function (input) {
-	var Constructor
-	// validate with validator first if present
-	if (isFunction(this.validator) && !this.validator(input)) return false;
-	// if not strict mode then we don't need to validate anything
-	if (this.strict === false) return true;
-	// if its an object and the type constructor is
-	// not an object then validate that it is an 
-	// actual instance of the type constructor 
-	if (typeof input === 'object' && this.Constructor !== Object)
-		return (input instanceof this.Constructor);
-	// check for enumerated values
-	if (isArray(this.enum)) {
-		return inArray(this.enum, input);
-	}
-	// check input for primitive types
-	switch (typeof input) {
-		case 'string':   Constructor = String;   break;
-		case 'function': Constructor = Function; break;
-		case 'boolean':  Constructor = Boolean;  break;
-		case 'object':   Constructor = Object;   break;
-		case 'number':   Constructor = Number;   break;
-	}
-	// compare Type Constructor with input Constructor
-	return this.Constructor === Constructor;
+  var Constructor
+  // validate with validator first if present
+  if (isFunction(this.validator) && !this.validator(input)) return false;
+  // if not strict mode then we don't need to validate anything
+  if (this.strict === false) return true;
+  // if its an object and the type constructor is
+  // not an object then validate that it is an 
+  // actual instance of the type constructor 
+  if (typeof input === 'object' && this.Constructor !== Object)
+    return (input instanceof this.Constructor);
+  // check for enumerated values
+  if (isArray(this.enum)) {
+    return inArray(this.enum, input);
+  }
+  // check input for primitive types
+  switch (typeof input) {
+    case 'string':   Constructor = String;   break;
+    case 'function': Constructor = Function; break;
+    case 'boolean':  Constructor = Boolean;  break;
+    case 'object':   Constructor = Object;   break;
+    case 'number':   Constructor = Number;   break;
+  }
+  // compare Type Constructor with input Constructor
+  return this.Constructor === Constructor;
 };
 
 /**
@@ -455,8 +484,8 @@ Type.prototype.validate = function (input) {
  * @param {Mixed} input
  */
 Type.prototype.coerce = function (input) {
-	try { return this.Constructor(input); }
-	catch (e) { return input; }
+  try { return this.Constructor(input); }
+  catch (e) { return input; }
 };
 
 /**
@@ -467,217 +496,236 @@ Type.prototype.coerce = function (input) {
  * @param {Object} data
  */
 function Model (data, schema) {
-	if (! (this instanceof Model)) return new Model(data, schema);
-	if (schema instanceof Schema) this.schema = schema;
-	var self = this
-	/** internal memory **/
-	var table = {};
-	// ensure an object if not undefined
-	if (data !== undefined && typeof data !== 'object') throw new TypeError("Modele expects an object");
-	// ensure the schema set
-	if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
+  if (! (this instanceof Model)) return new Model(data, schema);
+  if (schema instanceof Schema) this.schema = schema;
+  var self = this
+  /** internal memory **/
+  var table = {};
+  // ensure an object if not undefined
+  if (data !== undefined && typeof data !== 'object') throw new TypeError("Modele expects an object");
+  // ensure the schema set
+  if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
 
-	var build = function (data, tree, object) {
-		tree = (tree instanceof Tree)? tree : self.schema.tree;
-		object = (typeof object === 'object')? object : this;
-		for (var prop in data) {
-			// encapsulate each iteration in a scope
-			!function (prop) {
-				// if not in tree, return and continue on
-				if (!tree[prop]) return;
-				// if the property is an object, check if the tree property
-				// is a Tree instance object too
-				if (typeof data[prop] === 'object' && tree[prop] instanceof Tree) {
-					// define setter for object
-					define(data[prop], 'set', {
-						writable : false,
-						enumerable : false,
-						configurable : false,
-						value : function (value) { object[prop] = value; }
-					});
-					// define getter for object
-					define(data[prop], 'get', {
-						writable : false,
-						enumerable : false,
-						configurable : false,
-						value : function () { return object[prop] }
-					});
+  var build = function (data, tree, object) {
+    tree = (tree instanceof Tree)? tree : self.schema.tree;
+    object = (typeof object === 'object')? object : this;
+    for (var prop in data) {
+      // encapsulate each iteration in a scope
+      !function (prop) {
+        // if not in tree, return and continue on
+        if (!tree[prop]) return;
+        // if the property is an object, check if the tree property
+        // is a Tree instance object too
+        if (typeof data[prop] === 'object' && tree[prop] instanceof Tree) {
+          // define setter for object
+          define(data[prop], 'set', {
+            writable : false,
+            enumerable : false,
+            configurable : false,
+            value : function (value) { object[prop] = value; }
+          });
+          // define getter for object
+          define(data[prop], 'get', {
+            writable : false,
+            enumerable : false,
+            configurable : false,
+            value : function () { return object[prop] }
+          });
 
-					build(data[prop], tree[prop], object[prop]);
-				}
-				// we've reached some kind of scalar value 
-				// that exists in the schema tree and the object
-				else {
-					object[prop] = data[prop];
-				}
-			}.call(this, prop);
-		}
-	}.bind(this);
-	// overload refresh method on prototype
-	var refresh = function () {
-		if (isFrozen(this)) return false;
-		var defineFromTree = function (tree, scope, table) {
-			var item
-			for (item in tree) {
-				!function (item) {
-					// we don't want this as a possible field
-					if (tree[item].static) return
-					// it must be an instance of Type
-					if (tree[item] instanceof Type) {
-						// if it doesn't exist in the internal table
-						// then set it to undefined
-						table[item] = table[item] || undefined;
-						// create descriptor for property item on scope
-						// from tree descriptor
-						define(scope, item, {
-							configurable : false,
-							enumerable : true,
-							get : function () { 
-								return table[item]? tree[item].get(table[item]) : undefined; 
-							},
-							set : function (value) {
-								if (tree[item].validate(value))
-									table[item] = tree[item].set(value);
-							}
-						});
-					}
-					// if it is a tree instance then we need
-					// to do a recursive call to define the
-					// descriptors needed for the object
-					else if (tree[item] instanceof Tree || isArray(tree[item])) {
-						table[item] = table[item] || isArray(tree[item])? [] : {};
+          build(data[prop], tree[prop], object[prop]);
+        }
+        // we've reached some kind of scalar value 
+        // that exists in the schema tree and the object
+        else {
+          object[prop] = data[prop];
+        }
+      }.call(this, prop);
+    }
+  }.bind(this);
+  // overload refresh method on prototype
+  var refresh = function () {
+    if (isFrozen(this)) return false;
+    var defineFromTree = function (tree, scope, table) {
+      var item
+      for (item in tree) {
+        !function (item) {
+          // we don't want this as a possible field
+          if (tree[item].static) return
+          // it must be an instance of Type
+          if (tree[item] instanceof Type) {
+            // only set on plain objects
+            if (!isArray(scope)) {
+              // if it doesn't exist in the internal table
+              // then set it to undefined
+              table[item] = table[item] || undefined;
+              // create descriptor for property item on scope
+              // from tree descriptor
+              define(scope, item, {
+                configurable : false,
+                enumerable : true,
+                get : function () { 
+                  return table[item]? tree[item].get(table[item]) : undefined; 
+                },
+                set : function (value) {
+                  if (isFunction(tree[item].validate) && tree[item].validate(value))
+                    return table[item] = tree[item].set(value);
+                  else return false
+                }
+              });
+            }
+          }
+          // if it is a tree instance then we need
+          // to do a recursive call to define the
+          // descriptors needed for the object
+          else if (tree[item] instanceof Tree || isArray(tree[item])) {
+            table[item] =  isArray(tree[item])? [] : {};
 
-						if (isArray(tree[item])) {
-							define(scope, item, {
-								configurable: false,
-								enumerable : true,
-								writable: false,
-								value: table[item]
-							});
-						}
-						else {
-							define(scope, item, {
-								configurable: false,
-								enumerable : true,
-								writable : false,
-								value : {}
-							});
-						}
+            if (isArray(tree[item])) {
+              define(scope, item, {
+                configurable: false,
+                enumerable : true,
+                writable: false,
+                value: table[item]
+              });
+            }
+            else {
+              define(scope, item, {
+                configurable: false,
+                enumerable : true,
+                writable : false,
+                value : {}
+              });
+            }
 
-						define(scope[item], 'get', {
-							configurable: false,
-							enumerable: false,
-							writable: false,
-							value: function (key) { return table[item][key]; }
-						});
+            define(scope[item], 'get', {
+              configurable: false,
+              enumerable: false,
+              writable: false,
+              value: function (key) { return table[item][key]; }
+            });
 
-						define(scope[item], 'set', {
-							configurable: false,
-							enumerable: false,
-							writable: false,
-							value: function (value) { table[item][key] = value; }
-						});
+            define(scope[item], 'set', {
+              configurable: false,
+              enumerable: false,
+              writable: false,
+              value: function (value) { table[item][key] = value; }
+            });
 
-						// overload array methods
-						if (isArray(tree[item])) {
-							[
-								'concat', 'every', 'filter', 'forEach', 'indexOf', 'join', 'lastIndexOf', 'map', 'pop',
-								'push', 'reduce', 'reduceRight', 'reverse', 'shift', 'slice', 'some', 'sort', 'splice',
-								'toString', 'unshift', 'valueOf'
-							].map(function (method) {
-								if (isFunction([][method])) {
-									define(scope[item], method, {
-										configurable: false,
-										enumerable: false,
-										writable: false,
-										value: function (value) {
-											return tree[item].type.validate(value) && [][method].apply(table[item], arguments);
-										}
-									});
-								}
-							});
-						}
+            // overload array methods
+            if (isArray(tree[item])) {
+              [
+                'concat', 'every', 'filter', 'forEach', 'indexOf', 'join', 'lastIndexOf', 'map', 'pop',
+                'push', 'reduce', 'reduceRight', 'reverse', 'shift', 'slice', 'some', 'sort', 'splice',
+                'toString', 'unshift', 'valueOf'
+              ].map(function (method) {
+                if (isFunction([][method])) {
+                  define(scope[item], method, {
+                    configurable: false,
+                    enumerable: false,
+                    writable: false,
+                    value: function (value) {
+                      if (value !== undefined) {
+                        if (tree[item].type instanceof Type && isFunction(tree[item].type.validate)) {
+                          if (tree[item].type.validate(value)) {
+                            return [][method].apply(table[item], arguments)
+                          }
+                          else {
+                            return false;
+                          }
+                        }
+                        else {
+                          return [][method].apply(table[item], arguments)
+                        }
+                      }
+                      else {
+                        return false;
+                      }
+                    }.bind(null)
+                  });
+                }
+              });
+            }
 
-						// recursive call to define descriptors
-						defineFromTree.call(self, tree[item], scope[item], table[item]);
-					}
-				}.call(self, item);
-			}
-			
-			//if (this.schema.options.strict && scope !== this) 
-				//freeze(scope)
-		}.bind(this);
-		// define
-		defineFromTree(self.schema.tree, this, table);
-		// free if in strict mode
-		if (this.schema.options.strict) freeze(this);
-	};
-	// overload set method on prototype
-	define(this, 'set', {
-		configurable : false,
-		enumerable : false,
-		writable : false,
-		value : function (key, value) {
-			this[key] = value
-		}
-	 });
+            // recursive call to define descriptors
+            defineFromTree.call(self, tree[item], scope[item], table[item]);
+          }
+        }.call(self, item);
+      }
+      
+      //if (this.schema.options.strict && scope !== this) 
+        //freeze(scope)
+    }.bind(this);
+    // define
+    defineFromTree(self.schema.tree, this, table);
+    // free if in strict mode
+    if (this.schema.options.strict) freeze(this);
+  };
+  // overload set method on prototype
+  define(this, 'set', {
+    configurable : false,
+    enumerable : false,
+    writable : false,
+    value : function (key, value) {
+      return this[key] = value;
+    }
+   });
 
-	define(this, 'get', {
-		configurable : false,
-		enumerable : false,
-		writable : false,
-		value : function (key) {
-			return table[key]
-		}
-	 });
+  define(this, 'get', {
+    configurable : false,
+    enumerable : false,
+    writable : false,
+    value : function (key) {
+      return table[key]
+    }
+   });
 
-	define(this, 'refresh', {
-		configurable : false,
-		enumerable : false,
-		writable : false,
-		value : refresh
-	 });
+  define(this, 'refresh', {
+    configurable : false,
+    enumerable : false,
+    writable : false,
+    value : refresh
+   });
 
-	define(this, 'toObject', {
-		configurable: false,
-		enumerable : false,
-		writable : false,
-		value : function () {
-			return table;
-		}
-	});
+  define(this, 'toObject', {
+    configurable: false,
+    enumerable : false,
+    writable : false,
+    value : function () {
+      return table;
+    }
+  });
 
-	define(this, 'toJSON', {
-		configurable: false,
-		enumerable : false,
-		writable : false,
-		value : function () {
-			return table;
-		}
-	});
+  define(this, 'toJSON', {
+    configurable: false,
+    enumerable : false,
+    writable : false,
+    value : function () {
+      return table;
+    }
+  });
 
-	define(this, 'toString', {
-		configurable: false,
-		enumerable : false,
-		writable : false,
-		value : function () {
-			return '[object Model]';
-		}
-	});
+  define(this, 'toString', {
+    configurable: false,
+    enumerable : false,
+    writable : false,
+    value : function () {
+      return '[object Model]';
+    }
+  });
 
-	define(this, 'valueOf', {
-		configurable: false,
-		enumerable : false,
-		writable : false,
-		value : function () {
-			return this.toObject();
-		}
-	});
+  define(this, 'valueOf', {
+    configurable: false,
+    enumerable : false,
+    writable : false,
+    value : function () {
+      return this.toObject();
+    }
+  });
 
-	// call a refresh to init schema
-	this.refresh();
-	// set  data
-	data && build(data);
+  // call a refresh to init schema
+  this.refresh();
+  // set  data
+  data && build(data);
 }
 
 /**

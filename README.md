@@ -45,6 +45,10 @@ var werle = new User({ name: 'werle', email: 'joseph@werle.io' })
 
 ## api
 
+### draft(descriptor, options)
+
+Creates a schema form a descriptor and returns a model constructor
+
 ### Schema(descriptor, options)
 
 Adds an object to the schema tree
