@@ -16,4 +16,9 @@ install:
 test: install
 	@./node_modules/mocha/bin/mocha -R spec
 
-.PHONY: all clean install test components build
+dist: build
+	@test -d ./dist || mkdir ./dist
+	@cp ./build/build.js ./dist/draft.min.js
+	@cp ./dist/draft.min.js ./draft.min.js
+
+.PHONY: all clean install test components build dist
