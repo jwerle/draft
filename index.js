@@ -248,7 +248,7 @@ Schema.prototype.static = function (name, func) {
  * @function Schema#createModel
  * @param {Object} options
  */
-Schema.prototype.toModel = Schema.prototype.createModel = function (options, proto) {
+Schema.prototype.createModel = Schema.prototype.toModel = function (options, proto) {
   var self = this
   options = (isPlainObject(options))? options : {};
   function InstanceModel () { return Model.apply(this, arguments); }
@@ -262,7 +262,7 @@ Schema.prototype.toModel = Schema.prototype.createModel = function (options, pro
     if (!isUndefined(InstanceModel[item])) continue;
     // it must be defined and have a valid function value
     if (this.tree[item].static === true && !isUndefined(this.tree[item].value)) {
-      InstanceModel[item] = this.tree[item].value;
+      InstanceModel[item] = this.tree[item].value.bind(InstanceModel);
     }
   }
 
@@ -297,14 +297,14 @@ Schema.prototype.new = function (data) {
  *
  * @constructor Tree
  * @api public
- * @param {Object} object
+ * @param {Object} descriptor
  * @param {Object} options
  */
-function Tree (object, options) {
+function Tree (descriptor, options) {
   // ensure we have an object
-  if (!isArray(object) && object !== undefined && object !== null && !isPlainObject(object))
-    throw new TypeError("Tree only expects an object");
-  else this.add(object);
+  if (!isArray(descriptor) && descriptor !== undefined && descriptor !== null && !isPlainObject(descriptor))
+    throw new TypeError("Tree only expects a descriptor");
+  else this.add(descriptor);
 
   if (isPlainObject(options) && options.array === true) {
     var array = []
@@ -332,25 +332,26 @@ Tree.prototype.add = function (parent, key, descriptor) {
     }
   }
   else {
+    parent = (parent instanceof Tree || isString(parent))? parent : this;
     // is this a reference to a child tree?
     if (parent instanceof Tree) {
       if (isPlainObject(descriptor)) {
         if (isFunction(descriptor.type)) {
-          this[key] = new Type(descriptor.type, descriptor);
+          parent[key] = new Type(descriptor.type, descriptor);
         }
         else {
-          this[key] = new Tree(descriptor);
+          parent[key] = new Tree(descriptor);
         }
       }
       else if (isFunction(descriptor)) {
-        this[key] = new Type(descriptor);
+        parent[key] = new Type(descriptor);
       }
       else if (isArray(descriptor)) {
         if (descriptor.length && isFunction(descriptor[0])) {
-          this[key] = new Tree(null, { array: true, type: descriptor[0] });
+          parent[key] = new Tree(null, { array: true, type: descriptor[0] });
         }
         else {
-          this[key] = [];
+          parent[key] = [];
         }
       }
     }
@@ -401,7 +402,7 @@ function Type (Constructor, descriptor) {
 }
 
 /**
- * String output of a Type instance
+ * Returns a string representation of a Type instance
  */
 Type.prototype.toString = function () {
   return '[object Type]';
@@ -411,10 +412,8 @@ Type.prototype.toString = function () {
  * Return original constructor let it handle valueOf
  */
 Type.prototype.valueOf = function () {
-  return this.Constructor
+  return this.Constructor.valueOf();
 };
-
-
 
 /**
  * Default getter that coerces a value
@@ -495,7 +494,13 @@ Type.prototype.coerce = function (input) {
  */
 function Model (data, schema) {
   if (! (this instanceof Model)) return new Model(data, schema);
-  if (schema instanceof Schema) this.schema = schema;
+  define(this, 'schema', {
+    enumerable : false,
+    writable : false,
+    configurable : false,
+    value: (schema instanceof Schema)? schema : this.schema
+  });
+  
   var self = this
   /** internal memory **/
   var table = {};
