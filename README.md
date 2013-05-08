@@ -165,7 +165,7 @@ var bob = schema.new({
 });
 ```
 
-## using schema descriptors
+#### using schema descriptors
 
 A schema descriptor is a key to type descriptor object. 
 The key for each property on the object represents a possible key on a model instance created from the schema instance.
@@ -186,7 +186,7 @@ new draft.Schema({
 
 --
 
-## Tree(descriptor, options)
+### Tree(descriptor, options)
 
 Tree constructor.
 Creates an object tree for a schema. This is used for aggregating types
@@ -207,7 +207,7 @@ var tree = new draft.Tree({
 tree.name; // { Constructor: [Function: String] }
 ```
 
-### .add(parent, key, descriptor)
+#### .add(parent, key, descriptor)
 
 Adds a key to the tree on a given parent tree. 
 Defaults to 'this' as the parent if one is not provided.
@@ -236,7 +236,7 @@ tree.host; // { Constructor: [Function: String] }
 ```
 --
 
-## Type(Constructor, descriptor)
+### Type(Constructor, descriptor)
 
 Type constructor. Creates a Type used in a Tree instance for a Schema instance. 
 It is meant to provide methods for validation and coercion.
@@ -401,7 +401,7 @@ Returns a value representation of a Model instance
 
 --
 
-## example usage
+## example
 
 Define a schema for an object with types. Strict mode default
 
