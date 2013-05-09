@@ -262,7 +262,7 @@ Schema.prototype.createModel = Schema.prototype.toModel = function (options, pro
     if (!isUndefined(InstanceModel[item])) continue;
     // it must be defined and have a valid function value
     if (this.tree[item].static === true && !isUndefined(this.tree[item].value)) {
-      InstanceModel[item] = this.tree[item].value.bind(InstanceModel);
+      InstanceModel[item] = (isFunction(this.tree[item].value))? this.tree[item].value.bind(InstanceModel) : this.tree[item].value;
     }
   }
 
