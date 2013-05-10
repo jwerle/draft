@@ -505,7 +505,7 @@ function Model (data, schema) {
   /** internal memory **/
   var table = {};
   // ensure an object if not undefined
-  if (data !== undefined && typeof data !== 'object') throw new TypeError("Modele expects an object");
+  if (data !== undefined && typeof data !== 'object') throw new TypeError("Model expects an object. Got '"+ typeof data +"'");
   // ensure the schema set
   if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
 
