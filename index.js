@@ -251,9 +251,28 @@ Schema.prototype.static = function (name, func) {
 Schema.prototype.createModel = Schema.prototype.toModel = function (options, proto) {
   var self = this
   options = (isPlainObject(options))? options : {};
-  function InstanceModel () { return Model.apply(this, arguments); }
-  InstanceModel.prototype = Object.create(Model.prototype);
+  var instances = []
+  /**
+   * Private implementation of model
+   */
+  function InstanceModel () { 
+    instances.push(this);
+    return Model.apply(this, arguments); 
+  }
+  // set incoming prototype first
+  if (typeof proto === 'object') {
+    InstanceModel.prototype = proto;
+    InstanceModel.prototype.__proto__ = Object.create(Model.prototype);
+  }
+  else {
+    InstanceModel.prototype = Object.create(Model.prototype);
+  }
+  // reset constructor
+  InstanceModel.prototype.constructor = InstanceModel;
+  // attach schema instance
   InstanceModel.prototype.schema = this;
+  // attach instances
+  InstanceModel.prototype.instances = instances;
   // sugar to not use the 'new' operator
   InstanceModel.create = function (data, schema) { return new this(data, schema); }.bind(InstanceModel);
   // only scan top level
@@ -266,13 +285,6 @@ Schema.prototype.createModel = Schema.prototype.toModel = function (options, pro
     }
   }
 
-  if (typeof proto === 'object') {
-    for (var item in proto) {
-      // prevent overrides
-      if (!isUndefined(InstanceModel.prototype[item])) continue;
-      InstanceModel.prototype[item] = proto[item];
-    }
-  }
   // if the user wants to alloq modifications  
   if (options.freeze !== false) freeze(InstanceModel);
   return InstanceModel
@@ -667,7 +679,7 @@ function Model (data, schema) {
   define(this, 'set', {
     configurable : false,
     enumerable : false,
-    writable : false,
+    writable : true,
     value : function (key, value) {
       return this[key] = value;
     }
@@ -704,24 +716,6 @@ function Model (data, schema) {
     writable : false,
     value : function () {
       return table;
-    }
-  });
-
-  define(this, 'toString', {
-    configurable: false,
-    enumerable : false,
-    writable : false,
-    value : function () {
-      return '[object Model]';
-    }
-  });
-
-  define(this, 'valueOf', {
-    configurable: false,
-    enumerable : false,
-    writable : false,
-    value : function () {
-      return this.toObject();
     }
   });
 
@@ -782,7 +776,7 @@ Model.prototype.toJSON = function () {};
  * @function Model#toString
  * @interface 
  */
-Model.prototype.toString = function () {};
+Model.prototype.toString = function () { return '[object Model]'; };
 
 /**
  * Returns a value representation of a Model instance
@@ -791,5 +785,5 @@ Model.prototype.toString = function () {};
  * @function Model#valueOf
  * @interface 
  */
-Model.prototype.valueOf = function () {};
+Model.prototype.valueOf = function () { return this.toObject(); };
 
