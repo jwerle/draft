@@ -653,7 +653,7 @@ function Model (data, schema) {
                         }
                       }
                       else {
-                        return false;
+                        return [][method].apply(table[item], arguments);
                       }
                     }.bind(null)
                   });
