@@ -30,6 +30,12 @@ $ component install jwerle/draft
 $ bower install draft
 ```
 
+*browser*
+
+```html
+<script type="text/javascript" src="https://raw.github.com/jwerle/draft/master/draft.min.js"></script>
+```
+
 ## usage
 
 Creating a model with draft is as simple as passing it a schema descriptor
