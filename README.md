@@ -48,6 +48,21 @@ var werle = new User({ name: 'werle', email: 'joseph@werle.io' })
   , post  = new Post({ owner: werle, content: "I like draft :)"})
 ```
 
+You can even listen to events when properties are set
+
+```js
+werle.on('set', function (key, value) {
+  console.log(key); // 'name'
+  console.log(value); // 'werle'
+});
+
+werle.on('set:name', function (value) {
+  console.log(value); // 'werle'
+});
+
+werle.name = 'werle';
+```
+
 ## api
 
 ### draft(descriptor, options)
@@ -379,6 +394,23 @@ var schema = new draft.Schema({
 });
 
 var user = new draft.Model({ name: 'werle', email: 'joseph@werle.io' }, schema);
+```
+
+*Events*
+
+All model instance emit a `set` event that you can listen to. Each model also emits a
+`set:<PROPERTY>` event where `<PROPERTY>` is the property receiving the change.
+
+*example*
+
+```js
+user.on('set', function (key, value) {
+  // handle event for all set events
+});
+
+user.on('set:name', function (value) {
+  // handle event for set events on the name property
+});
 ```
 
 #### .refresh()
