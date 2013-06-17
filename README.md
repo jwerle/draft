@@ -33,7 +33,7 @@ $ bower install draft
 *browser*
 
 ```html
-<script type="text/javascript" src="https://raw.github.com/jwerle/draft/master/draft.min.js"></script>
+<script type="text/javascript" src="https://raw.github.com/jwerle/draft/master/draft.js"></script>
 ```
 
 ## usage
