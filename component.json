@@ -8,7 +8,9 @@
     "schema",
     "model"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "component/emitter": "*"
+  },
   "development": {},
   "license": "MIT",
   "scripts": [

@@ -181,5 +181,9 @@ describe("draft", function () {
       // push post to user object
       werle.posts.push(post);
     });
+
+    it("Should emit events when properties are set", function (done) {
+      
+    });
   });
 });
