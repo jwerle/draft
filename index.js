@@ -669,6 +669,7 @@ function Model (data, schema) {
       var item
       for (item in tree) {
         !function (item) {
+          if (tree[item] === null || typeof tree[item] !== 'object') return;
           // we don't want this as a possible field
           if (tree[item].static) return
           // it must be an instance of Type
