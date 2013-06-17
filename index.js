@@ -13,8 +13,8 @@ if (typeof window === 'object') {
 } else {
   var emitter = function (o) {
     var Emitter = require('events').EventEmitter
-    Emitter.call(o);
     for (var p in Emitter.prototype) o[p] = Emitter.prototype[p];
+    Emitter.call(o);
     return o;
   }
 }
@@ -604,6 +604,8 @@ function Model (data, schema) {
   });
 
   emitter(this);
+  // ensure object (weird 0.8 bug)
+  this._events = {};
   
   var self = this
   /** internal memory **/
@@ -635,9 +637,11 @@ function Model (data, schema) {
             enumerable : false,
             configurable : false,
             value : function (value) {
-              // object.emit('set', prop, value);
-              // object.emit('set:'+ prop, value);
               object[prop] = value; 
+              if (typeof object.emit === 'function') {
+                object.emit('set:'+ prop, object[prop]);
+                object.emit('set', prop, object[prop]);
+              }
             }
           });
           // define getter for object
@@ -655,8 +659,8 @@ function Model (data, schema) {
         else {
           object[prop] = data[prop];
           if (typeof object.emit === 'function') {
-            // object.emit('set:'+ prop, object[prop]);
-            // object.emit('set', prop, object[prop]);
+            object.emit('set:'+ prop, object[prop]);
+            object.emit('set', prop, object[prop]);
           }
         }
       }.call(this, prop);
@@ -690,8 +694,9 @@ function Model (data, schema) {
                 },
                 set : function (value) {
                   if (isFunction(tree[item].validate) && tree[item].validate(value)) {
+                    table[item] = tree[item].set(value);
                     scope.emit('set', item, value);
-                    return table[item] = tree[item].set(value);
+                    return table[item];
                   } else { 
                     return false;
                   }
@@ -735,6 +740,8 @@ function Model (data, schema) {
               writable: false,
               value: function (value) { 
                 table[item][key] = value; 
+                scope.emit('set', item, value);
+                return table[item];
               }
             });
 
@@ -837,6 +844,9 @@ function Model (data, schema) {
   data && build(data);
 }
 
+
+Model.prototype._events;
+Model.prototype.domain;
 
 /**
  * A reference to the schema instance for the model
