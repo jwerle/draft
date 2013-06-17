@@ -200,12 +200,21 @@ describe("draft", function () {
       });
 
       model.property = new Property();
+
+      model.on('set:id', function (value) {
+        assert(value === 1234);
+      });
+
+      model.on('set:name', function (value) {
+        assert(value === "model");
+      });
+
       model.property.on('set', function (key, value) {
         assert(value);
       });
 
       model.property.on('set:value', function (value) {
-        assert(value);
+        assert(value === 'somevalue');
         done();
       });
 
