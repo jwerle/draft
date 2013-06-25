@@ -810,9 +810,6 @@ function Model (data, schema) {
 }
 
 
-Model.prototype._events;
-Model.prototype.domain;
-
 /**
  * A reference to the schema instance for the model
  *
