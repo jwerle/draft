@@ -2,7 +2,7 @@
   "name": "draft",
   "repo": "jwerle/draft",
   "description": "Construct Object schemas and models",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "keywords": [
     "object",
     "schema",
