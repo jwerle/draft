@@ -482,11 +482,18 @@ function Type (Constructor, descriptor) {
   if (isBoolean(descriptor.static)) (this.static = descriptor.static) && delete descriptor.static;
   // check if has set value
   if (descriptor.value) (this.value = descriptor.value) && delete descriptor.value;
-  // check if has default
-  if (descriptor.default) (this.default = descriptor.default) && delete descriptor.default;
   // check if has validator
   if (isFunction(descriptor.validator)) (this.validator = descriptor.validator) && delete descriptor.validator;
-  
+  // check if has default
+  if (descriptor.default) {
+    if (Constructor !== Function && 'function' === typeof descriptor.default) {
+      this.default = descriptor.default();
+    } else {
+      this.default = descriptor.default;
+    }
+
+    delete descriptor.default;
+  }
 }
 
 
