@@ -137,6 +137,7 @@ describe("draft", function () {
         var schema, User, user
         schema = new Schema();
         schema.add('name', String);
+        schema.add('uuid', {type: String, default: 'anon'})
         schema.add('profile', { 
           age: Number, 
           gender: { 
@@ -155,6 +156,7 @@ describe("draft", function () {
         assert.ok(user.profile);
         assert.ok(user.profile.age);
         assert.ok(user.profile.gender);
+        assert.ok(user.uuid === 'anon');
       });
     });
   });

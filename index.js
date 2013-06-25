@@ -486,6 +486,7 @@ function Type (Constructor, descriptor) {
   if (descriptor.default) (this.default = descriptor.default) && delete descriptor.default;
   // check if has validator
   if (isFunction(descriptor.validator)) (this.validator = descriptor.validator) && delete descriptor.validator;
+  
 }
 
 
@@ -702,6 +703,10 @@ function Model (data, schema) {
                   }
                 }
               });
+            }
+
+            if (!isUndefined(tree[item].default)) {
+              scope[item] = tree[item].default;
             }
           }
           // if it is a tree instance then we need
