@@ -381,44 +381,47 @@ function Tree (descriptor, options) {
  * @param {Object} descriptor
  */
 
-Tree.prototype.add = function (parent, key, descriptor) {
-  // are they just passing in an object as one big descriptor?
-  if (typeof parent === 'object' && arguments.length === 1) {
-    for (var prop in parent) {
-      this.add(this, prop, parent[prop]);
+define(Tree.prototype, 'add', {
+  enumerable: false,
+  value: function (parent, key, descriptor) {
+    // are they just passing in an object as one big descriptor?
+    if (typeof parent === 'object' && arguments.length === 1) {
+      for (var prop in parent) {
+        this.add(this, prop, parent[prop]);
+      }
+    }
+    else {
+      parent = (parent instanceof Tree || isString(parent))? parent : this;
+      // is this a reference to a child tree?
+      if (parent instanceof Tree) {
+        if (isPlainObject(descriptor)) {
+          if (isFunction(descriptor.type)) {
+            parent[key] = new Type(descriptor.type, descriptor);
+          }
+          else {
+            parent[key] = new Tree(descriptor);
+          }
+        }
+        else if (isFunction(descriptor)) {
+          parent[key] = new Type(descriptor);
+        }
+        else if (isArray(descriptor)) {
+          if (descriptor.length && isFunction(descriptor[0])) {
+            parent[key] = new Tree(null, { array: true, type: descriptor[0] });
+          }
+          else {
+            parent[key] = [];
+          }
+        }
+      }
+      else if (isString(parent) && key) {
+        descriptor = key
+        key = parent;
+        this.add(this, key, descriptor);
+      }
     }
   }
-  else {
-    parent = (parent instanceof Tree || isString(parent))? parent : this;
-    // is this a reference to a child tree?
-    if (parent instanceof Tree) {
-      if (isPlainObject(descriptor)) {
-        if (isFunction(descriptor.type)) {
-          parent[key] = new Type(descriptor.type, descriptor);
-        }
-        else {
-          parent[key] = new Tree(descriptor);
-        }
-      }
-      else if (isFunction(descriptor)) {
-        parent[key] = new Type(descriptor);
-      }
-      else if (isArray(descriptor)) {
-        if (descriptor.length && isFunction(descriptor[0])) {
-          parent[key] = new Tree(null, { array: true, type: descriptor[0] });
-        }
-        else {
-          parent[key] = [];
-        }
-      }
-    }
-    else if (isString(parent) && key) {
-      descriptor = key
-      key = parent;
-      this.add(this, key, descriptor);
-    }
-  }
-};
+});
 
 
 /**
