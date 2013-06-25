@@ -751,8 +751,8 @@ function Model (data, schema) {
         }.call(self, item);
       }
       
-      if (this.schema.options.strict && scope !== this) 
-        freeze(scope)
+      // if (this.schema.options.strict && scope !== this) 
+      //   freeze(scope)
     }.bind(this);
     // define
     defineFromTree(self.schema.tree, this, table);
@@ -790,7 +790,7 @@ function Model (data, schema) {
     enumerable : false,
     writable : false,
     value : function () {
-      return table;
+      return JSON.parse(JSON.stringify(table));
     }
   });
 
@@ -799,7 +799,7 @@ function Model (data, schema) {
     enumerable : false,
     writable : false,
     value : function () {
-      return table;
+      return JSON.parse(JSON.stringify(table));
     }
   });
 
