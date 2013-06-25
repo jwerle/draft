@@ -8,18 +8,6 @@ var define = Object.defineProperty
   , isArray = Array.isArray
   , toString = Object.prototype.toString
 
-if (typeof window === 'object') {
-  var emitter = require('emitter')
-} else {
-  var emitter = function (o) {
-    var Emitter = require('events').EventEmitter
-    for (var p in Emitter.prototype) o[p] = Emitter.prototype[p];
-    Emitter.call(o);
-    return o;
-  }
-}
-
-
 /**
  * Exports
  */
@@ -242,7 +230,6 @@ draft.createModel = function (schema, options) {
 
 function Schema (descriptor, options) {
   var self = this
-  emitter(this);
   // we must use plain objects
   if (typeof descriptor !== 'undefined' && !isPlainObject(descriptor)) 
     throw new TypeError("Schema only expects an object as a descriptor. Got '"+ typeof descriptor +"'");
@@ -252,10 +239,6 @@ function Schema (descriptor, options) {
   this.add(descriptor);
   // attach options
   this.options = merge({ strict : true}, isPlainObject(options)? options : {});
-  // propagate events
-  this.tree.emitter.on('set', function (key, value) {
-    self.emit('set', key, value);
-  });
 }
 
 
@@ -268,7 +251,6 @@ function Schema (descriptor, options) {
  */
 Schema.prototype.add = function () {
   this.tree.add.apply(this.tree, arguments);
-  //this.emit.apply(this, ['add'].concat(toArray(arguments)));
 };
 
 
@@ -342,7 +324,6 @@ Schema.prototype.createModel = Schema.prototype.toModel = function (options, pro
 
   // if the user wants to alloq modifications  
   if (options.freeze !== false) freeze(InstanceModel);
-  //this.emit('create', InstanceModel);
   return InstanceModel
 };
 
@@ -374,14 +355,13 @@ Schema.prototype.new = function (data) {
 
 function Tree (descriptor, options) {
   var self = this
-  this.emitter = emitter({});
   // ensure we have an object
   if (!isArray(descriptor) && descriptor !== undefined && descriptor !== null && !isPlainObject(descriptor))
     throw new TypeError("Tree only expects a descriptor");
   else this.add(descriptor);
 
   if (isPlainObject(options) && options.array === true) {
-    var array = emitter([])
+    var array = []
     array.__proto__ = this;
     array.type = new Type(options.type)
     return array;
@@ -415,9 +395,6 @@ Tree.prototype.add = function (parent, key, descriptor) {
       if (isPlainObject(descriptor)) {
         if (isFunction(descriptor.type)) {
           parent[key] = new Type(descriptor.type, descriptor);
-          parent[key].on('set', function (value) {
-            parent.emitter.emit('set', key, value);
-          });
         }
         else {
           parent[key] = new Tree(descriptor);
@@ -425,9 +402,6 @@ Tree.prototype.add = function (parent, key, descriptor) {
       }
       else if (isFunction(descriptor)) {
         parent[key] = new Type(descriptor);
-        parent[key].on('set', function (value) {
-          parent.emitter.emit('set', key, value);
-        });
       }
       else if (isArray(descriptor)) {
         if (descriptor.length && isFunction(descriptor[0])) {
@@ -436,8 +410,6 @@ Tree.prototype.add = function (parent, key, descriptor) {
         else {
           parent[key] = [];
         }
-        
-        this.emitter.emit('add', key, parent[key]);
       }
     }
     else if (isString(parent) && key) {
@@ -460,7 +432,6 @@ Tree.prototype.add = function (parent, key, descriptor) {
  */
 
 function Type (Constructor, descriptor) {
-  emitter(this);
   // ensure creation of Type
   if (!(this instanceof Type)) return new Type(Constructor, descriptor);
   // ensure descriptor object
@@ -537,7 +508,6 @@ Type.prototype.get = function (value) {
  */
 
 Type.prototype.set = function (value) {
-  this.emit('set', value);
   return this.coerce(value);
 };
 
@@ -610,10 +580,6 @@ function Model (data, schema) {
     configurable : false,
     value: (schema instanceof Schema)? schema : this.schema
   });
-
-  emitter(this);
-  // ensure object (weird 0.8 bug)
-  this._events = {};
   
   var self = this
   /** internal memory **/
@@ -622,11 +588,6 @@ function Model (data, schema) {
   if (data !== undefined && typeof data !== 'object') throw new TypeError("Model expects an object. Got '"+ typeof data +"'");
   // ensure the schema set
   if (!this.schema || !(this.schema instanceof Schema)) throw new TypeError(".schema hasn't been set");
-
-  this.schema.on('set', function (key, value) {
-    self.emit('set', key, value);
-    self.emit('set:'+ key, value);
-  });
 
   var build = function (data, tree, object) {
     tree = (tree instanceof Tree)? tree : self.schema.tree;
@@ -646,10 +607,6 @@ function Model (data, schema) {
             configurable : false,
             value : function (value) {
               object[prop] = value; 
-              if (typeof object.emit === 'function') {
-                object.emit('set:'+ prop, object[prop]);
-                object.emit('set', prop, object[prop]);
-              }
             }
           });
           // define getter for object
@@ -666,10 +623,6 @@ function Model (data, schema) {
         // that exists in the schema tree and the object
         else {
           object[prop] = data[prop];
-          if (typeof object.emit === 'function') {
-            object.emit('set:'+ prop, object[prop]);
-            object.emit('set', prop, object[prop]);
-          }
         }
       }.call(this, prop);
     }
@@ -693,7 +646,6 @@ function Model (data, schema) {
               table[item] = table[item] || undefined;
               // create descriptor for property item on scope
               // from tree descriptor
-              emitter(scope);
               define(scope, item, {
                 configurable : false,
                 enumerable : true,
@@ -703,7 +655,6 @@ function Model (data, schema) {
                 set : function (value) {
                   if (isFunction(tree[item].validate) && tree[item].validate(value)) {
                     table[item] = tree[item].set(value);
-                    scope.emit('set', item, value);
                     return table[item];
                   } else { 
                     return false;
@@ -752,7 +703,6 @@ function Model (data, schema) {
               writable: false,
               value: function (value) { 
                 table[item][key] = value; 
-                scope.emit('set', item, value);
                 return table[item];
               }
             });

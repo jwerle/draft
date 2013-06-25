@@ -185,46 +185,5 @@ describe("draft", function () {
       // push post to user object
       werle.posts.push(post);
     });
-
-    it("Should emit events when properties are set", function (done) {
-      var Property = draft({
-          value: String
-        })
-
-      var schema = draft.createSchema({ 
-        name: String, id: Number, property: Property
-      })
-
-      var Model = schema.createModel();
-
-      var model = new Model()
-
-      model.on('set', function (key, value) {
-        assert(value);
-      });
-
-      model.property = new Property();
-
-      model.on('set:id', function (value) {
-        assert(value === 1234);
-      });
-
-      model.on('set:name', function (value) {
-        assert(value === "model");
-      });
-
-      model.property.on('set', function (key, value) {
-        assert(value);
-      });
-
-      model.property.on('set:value', function (value) {
-        assert(value === 'somevalue');
-        done();
-      });
-
-      model.id = 1234;
-      model.name = "model";
-      model.property.value = 'somevalue';
-    });
   });
 });

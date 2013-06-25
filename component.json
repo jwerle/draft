@@ -9,7 +9,6 @@
     "model"
   ],
   "dependencies": {
-    "component/emitter": "*"
   },
   "development": {},
   "license": "MIT",
