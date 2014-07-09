@@ -3,7 +3,6 @@ describe("draft", function () {
     , assert = require('assert')
     , Schema = draft.Schema
     , Model  = draft.Model
-    , Model  = draft.Model
 
   describe("draft(descriptor, options)", function () {
     it("Should accept an object as a descriptor and an object of options", function () {
@@ -59,7 +58,7 @@ describe("draft", function () {
 
     describe("Should define a tree instance after instantiation", function () {
       var schema
-      
+
       it("Should set the constructor on a property => type definition", function () { 
         schema = new Schema({ property: String });
         assert.ok(schema.tree.property.Constructor === String);
@@ -178,10 +177,10 @@ describe("draft", function () {
       Post = PostSchema.createModel();
       // add posts collection to user schema and use Post model as type
       UserSchema.add({ posts: [Post] });
-      // create 'werle' user
-      werle = new User({ name: 'werle', email: 'joseph@werle.io' });
       // create post owned by 'werle'
       post  = new Post({ owner: werle, content: "I like draft :)"});
+      // create 'werle' user
+      werle = new User({ name: 'werle', email: 'joseph@werle.io', posts: [post] });
       // push post to user object
       werle.posts.push(post);
     });

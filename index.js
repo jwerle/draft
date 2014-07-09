@@ -807,6 +807,17 @@ function Model (data, schema) {
   this.refresh();
   // set  data
   data && build(data);
+
+  // handle incoming arrays
+  if ('object' == typeof data) {
+    for (var prop in data) {
+      if (isArray(data[prop]) && isArray(this[prop])) {
+        data[prop].forEach(function (v) {
+          this.push(v);
+        }, this[prop]);
+      }
+    }
+  }
 }
 
 
